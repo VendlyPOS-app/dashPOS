@@ -1043,6 +1043,55 @@
     </div>
   </div>
 
+  <!-- MODAL DE PRE-APROBACIÓN DE DEMO / TERMINAL -->
+  <div id="modal-preaprobar-demo" class="overlay">
+    <div class="card" style="max-width: 520px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 1.5rem;">
+      <div class="card-header" style="margin-bottom: 1rem; padding-bottom: 0.75rem;">
+        <div>
+          <h3 class="card-title" style="font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+            <span>⚡</span> Pre-aprobar Terminal / Demo
+          </h3>
+          <p style="font-size: 0.8rem; color: var(--text-soft); margin-top: 0.25rem;">
+            Autoriza una terminal antes de que inicie la aplicación en el equipo.
+          </p>
+        </div>
+        <button class="btn-icon" onclick="cerrarModalPreaprobarDemo()" title="Cerrar modal" style="font-size: 1.1rem; width: 28px; height: 28px;">✕</button>
+      </div>
+
+      <div style="overflow-y: auto; display: flex; flex-direction: column; gap: 0.9rem; padding-right: 0.3rem;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="pre-machine-id" style="font-size: 0.85rem; font-weight: 600; color: #fff;">ID de Equipo (Machine ID) *</label>
+          <input type="text" id="pre-machine-id" class="input-field" placeholder="Ej: a4f7d974303e582a" style="font-family: monospace; text-transform: lowercase;">
+          <small style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">
+            Identificador único emitido por la instalación de VendlyPOS.
+          </small>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="pre-nombre-equipo" style="font-size: 0.85rem; font-weight: 600; color: #fff;">Nombre o Referencia de la Terminal</label>
+          <input type="text" id="pre-nombre-equipo" class="input-field" placeholder="Ej: Sucursal Centro - Caja 1">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="pre-dias-demo" style="font-size: 0.85rem; font-weight: 600; color: #fff;">Días de Vigencia Demo</label>
+          <select id="pre-dias-demo" class="input-field">
+            <option value="15" selected>15 Días (Estándar)</option>
+            <option value="30">30 Días (Extendido)</option>
+            <option value="45">45 Días</option>
+            <option value="60">60 Días (Piloto)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
+        <button class="btn btn-outline" onclick="cerrarModalPreaprobarDemo()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-save-preaprobacion" onclick="guardarPreaprobacionDemo()">
+          💾 Pre-aprobar Terminal
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- PANTALLA DE ACCESO REMOTO (LOGIN / CONFIGURACIÓN) -->
   <div id="login-overlay" class="overlay active">
     <div class="card login-card">
@@ -1132,14 +1181,20 @@
               </svg>
               Terminales / Conexiones Activas
             </h3>
-            <button class="btn-icon" onclick="cargarDatos()" title="Actualizar Lista">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <polyline points="1 20 1 14 7 14"></polyline>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-              </svg>
-            </button>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button class="btn btn-sm btn-primary" onclick="abrirModalPreaprobarDemo()" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px;" title="Pre-aprobar nuevo equipo antes de abrir la aplicación">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Pre-aprobar Demo</span>
+              </button>
+              <button class="btn-icon" onclick="cargarDatos()" title="Actualizar Lista">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+              </button>
+            </div>
           </div>
 
           <!-- Alerta de Demos Pendientes -->
@@ -1292,7 +1347,7 @@
                 style="font-size: 2rem; font-weight: bold; color: var(--success); letter-spacing: 4px;">000000</span>
             </div>
           </div>
-            <!-- Administración de Catálogos Web (Cloud Firestore) -->
+            <!-- Administración de Catálogos Web (Nube VendlyPOS / PocketBase) -->
             <div class="card">
               <div class="card-header">
                 <h3 class="card-title" style="color: #38bdf8;">
@@ -1300,46 +1355,40 @@
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
                   </svg>
-                  Catálogos Web (Cloud Firestore)
+                  Catálogos Web (Nube VendlyPOS)
                 </h3>
               </div>
 
               <p style="font-size: 0.8rem; color: var(--text-soft); margin-bottom: 1rem;">
-                Consulte o restablezca el PIN de sincronización de la base de datos Firestore del catálogo web.
+                Consulte o restablezca el PIN de sincronización de la base de datos del catálogo web.
               </p>
 
               <div class="form-group">
-                <label for="txt-firestore-store-id">ID de la Tienda</label>
-                <input type="text" id="txt-firestore-store-id" class="input-field" placeholder="Identificador de tienda"
+                <label for="txt-pb-store-id">ID de la Tienda (Slug)</label>
+                <input type="text" id="txt-pb-store-id" class="input-field" placeholder="Identificador de tienda (ej: puntodigital)"
                   style="text-align: center;">
               </div>
 
-              <div class="form-group">
-                <label for="txt-firestore-project-id">Proyecto Firebase (Catálogo)</label>
-                <input type="text" id="txt-firestore-project-id" class="input-field" placeholder="Proyecto Firebase"
-                  value="aurapos-catalogo" style="text-align: center;">
-              </div>
-
               <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem; margin-bottom: 1rem;">
-                <button class="btn btn-primary" onclick="consultarPinFirestore()">
+                <button class="btn btn-primary" onclick="consultarPinPocketBase()">
                   🔍 Consultar Datos y PIN
                 </button>
               </div>
 
               <!-- Contenedor de Resultado de Consulta -->
-              <div id="firestore-query-result"
+              <div id="pb-query-result"
                 style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: var(--radius-sm); background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2);">
                 <div
                   style="font-size: 0.75rem; color: var(--text-soft); margin-bottom: 0.4rem; display: flex; justify-content: space-between;">
-                  <span>Negocio:</span> <span id="lbl-fs-name" style="font-weight: 600; color: #fff;">—</span>
+                  <span>Negocio:</span> <span id="lbl-pb-name" style="font-weight: 600; color: #fff;">—</span>
                 </div>
                 <div
                   style="font-size: 0.75rem; color: var(--text-soft); margin-bottom: 0.4rem; display: flex; justify-content: space-between;">
-                  <span>WhatsApp:</span> <span id="lbl-fs-phone" style="font-weight: 600; color: #fff;">—</span>
+                  <span>WhatsApp:</span> <span id="lbl-pb-phone" style="font-weight: 600; color: #fff;">—</span>
                 </div>
                 <div
                   style="font-size: 0.75rem; color: var(--text-soft); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.4rem; margin-top: 0.4rem;">
-                  <span>PIN Sincro:</span> <span id="lbl-fs-pin"
+                  <span>PIN Sincro:</span> <span id="lbl-pb-pin"
                     style="font-size: 1.1rem; font-weight: bold; color: #38bdf8; letter-spacing: 1px;">—</span>
                 </div>
               </div>
@@ -1350,18 +1399,12 @@
                   Cambiar PIN en la Nube</h4>
 
                 <div class="form-group">
-                  <label for="txt-firestore-new-pin">Nuevo PIN (4 dígitos)</label>
-                  <input type="text" id="txt-firestore-new-pin" class="input-field" placeholder="PIN de 4 dígitos" maxlength="4"
+                  <label for="txt-pb-new-pin">Nuevo PIN (4 dígitos)</label>
+                  <input type="text" id="txt-pb-new-pin" class="input-field" placeholder="PIN de 4 dígitos" maxlength="4"
                     style="text-align: center; font-size: 1.1rem; letter-spacing: 2px;">
                 </div>
 
-                <div class="form-group">
-                  <label for="txt-firestore-admin-token">Token Secreto de Admin</label>
-                  <input type="password" id="txt-firestore-admin-token" class="input-field" placeholder="Token Secreto"
-                    value="AuraAdminToken2026" style="text-align: center;">
-                </div>
-
-                <button class="btn btn-danger" onclick="cambiarPinFirestore()" id="btn-fs-update">
+                <button class="btn btn-danger" onclick="cambiarPinPocketBase()" id="btn-pb-update">
                   🔑 Actualizar PIN en la Nube
                 </button>
               </div>
@@ -1610,7 +1653,7 @@
                       <input type="checkbox" id="lic-mod-catalogo-web" onchange="const w=document.getElementById('lic-web'); if(w) w.checked=this.checked;">
                       <div class="mod-tile-content">
                         <span class="mod-tile-title">🌐 Catálogo Web / Tienda</span>
-                        <span class="mod-tile-desc">Pedidos online y nube Firestore</span>
+                        <span class="mod-tile-desc">Pedidos online y catálogo en la nube</span>
                       </div>
                     </label>
                     <label class="mod-tile">
@@ -2033,6 +2076,7 @@
 
               let demoBadge = '';
               let btnAprobarDemo = '';
+              let btnReiniciarDemo = '';
               if (t.tipo_instalacion === 'demo' || t.aprobado !== undefined) {
                 if (t.aprobado === false) {
                   demoBadge = '<span class="badge" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;font-size:0.65rem;margin-left:0.3rem;">🟡 Demo Pendiente</span>';
@@ -2040,6 +2084,7 @@
                 } else if (t.aprobado === true) {
                   const dias = t.dias_demo || 15;
                   demoBadge = `<span class="badge badge-success" style="font-size:0.65rem;margin-left:0.3rem;">✓ Demo (${dias}d)</span>`;
+                  btnReiniciarDemo = `<button class="btn btn-sm btn-outline" style="padding:0.25rem 0.5rem;font-size:0.75rem;margin-right:0.35rem;display:inline-flex;align-items:center;gap:3px;" onclick="reiniciarDemo('${t.key}')" title="Reiniciar Período Demo">🔄 Reiniciar Demo</button>`;
                 }
               }
 
@@ -2070,6 +2115,7 @@
                 <td>
                   <div class="row-actions">
                     ${btnAprobarDemo}
+                    ${btnReiniciarDemo}
                     <button class="btn-icon btn-icon-danger" onclick="eliminarTerminal('${t.key}')" title="Eliminar Registro">
                       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                     </button>
@@ -2114,6 +2160,7 @@
                   </div>
                   <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                     ${btnAprobarDemo}
+                    ${btnReiniciarDemo}
                     <span style="font-size: 0.75rem; color: var(--text-soft); font-weight: 500;">Bloqueado:</span>
                     <label class="switch switch-lock">
                       <input type="checkbox" ${blockedChecked} onchange="toggleBloqueo('${t.key}', this.checked)">
@@ -2175,7 +2222,13 @@
             estado_aprobacion: 'aprobado',
             dias_demo: dias,
             aprobado_el: ahora,
+            reset_demo_ts: ahora,
             bloqueado: false
+          });
+          await fetchFirebase(`trials/${key}.json`, 'PATCH', {
+            machine_id: key,
+            trial_start: ahora,
+            updated_at: ahora
           });
           showToast(`¡Demo aprobada por ${dias} días para '${key}'!`, 'success');
           await registrarAuditoria('SISTEMA', 'Demo Aprobada', `Se aprobaron ${dias} días de demo para la terminal '${key}'.`);
@@ -2183,6 +2236,110 @@
         } catch (e) {
           console.error(e);
           showToast('Error al aprobar la demo: ' + e.message, 'error');
+        }
+      };
+
+      window.reiniciarDemo = async function(key, diasDefecto = 15) {
+        const diasStr = prompt(`¿Reiniciar el período de prueba Demo para la terminal '${key}'?\n\nIngrese la cantidad de días de vigencia:`, String(diasDefecto));
+        if (diasStr === null) return;
+        const dias = parseInt(diasStr.trim(), 10);
+        if (isNaN(dias) || dias <= 0) {
+          showToast('Cantidad de días inválida.', 'error');
+          return;
+        }
+        try {
+          const ahora = new Date().toISOString();
+          await fetchFirebase(`terminals/${key}.json`, 'PATCH', {
+            aprobado: true,
+            estado_aprobacion: 'aprobado',
+            dias_demo: dias,
+            aprobado_el: ahora,
+            reset_demo_ts: ahora,
+            bloqueado: false
+          });
+          await fetchFirebase(`trials/${key}.json`, 'PATCH', {
+            machine_id: key,
+            trial_start: ahora,
+            updated_at: ahora,
+            reset_at: ahora
+          });
+          showToast(`¡Demo reiniciada con éxito por ${dias} días para '${key}'!`, 'success');
+          await registrarAuditoria('SISTEMA', 'Demo Reiniciada', `Se reinició el período demo por ${dias} días para la terminal '${key}'.`);
+          cargarDatos();
+        } catch (e) {
+          console.error(e);
+          showToast('Error al reiniciar demo: ' + e.message, 'error');
+        }
+      };
+
+      window.abrirModalPreaprobarDemo = function() {
+        const modal = document.getElementById('modal-preaprobar-demo');
+        if (modal) {
+          document.getElementById('pre-machine-id').value = '';
+          document.getElementById('pre-nombre-equipo').value = '';
+          document.getElementById('pre-dias-demo').value = '15';
+          modal.classList.add('active');
+          setTimeout(() => {
+            const input = document.getElementById('pre-machine-id');
+            if (input) input.focus();
+          }, 150);
+        }
+      };
+
+      window.cerrarModalPreaprobarDemo = function() {
+        const modal = document.getElementById('modal-preaprobar-demo');
+        if (modal) modal.classList.remove('active');
+      };
+
+      window.guardarPreaprobacionDemo = async function() {
+        const midInput = document.getElementById('pre-machine-id');
+        const nombreInput = document.getElementById('pre-nombre-equipo');
+        const diasSelect = document.getElementById('pre-dias-demo');
+        const mid = (midInput.value || '').trim().toLowerCase();
+        const nombre = (nombreInput.value || '').trim() || 'Terminal Pre-aprobada';
+        const dias = parseInt(diasSelect.value, 10) || 15;
+
+        if (!mid || mid.length < 6) {
+          showToast('Por favor ingrese un ID de equipo válido (mínimo 6 caracteres).', 'error');
+          midInput.focus();
+          return;
+        }
+
+        const btn = document.getElementById('btn-save-preaprobacion');
+        if (btn) btn.disabled = true;
+
+        try {
+          const ahora = new Date().toISOString();
+          await fetchFirebase(`terminals/${mid}.json`, 'PATCH', {
+            nombre_equipo: nombre,
+            usuario: 'Pre-aprobado',
+            version: '1.0.0',
+            tipo_instalacion: 'demo',
+            aprobado: true,
+            estado_aprobacion: 'aprobado',
+            dias_demo: dias,
+            aprobado_el: ahora,
+            solicitado_el: ahora,
+            reset_demo_ts: ahora,
+            bloqueado: false,
+            preaprobado: true
+          });
+
+          await fetchFirebase(`trials/${mid}.json`, 'PATCH', {
+            machine_id: mid,
+            trial_start: ahora,
+            updated_at: ahora
+          });
+
+          await registrarAuditoria('SISTEMA', 'Demo Pre-aprobada', `Se pre-aprobó la terminal '${mid}' (${nombre}) por ${dias} días.`);
+          showToast(`¡Terminal '${mid}' pre-aprobada con éxito por ${dias} días!`, 'success');
+          cerrarModalPreaprobarDemo();
+          cargarDatos();
+        } catch (err) {
+          console.error(err);
+          showToast('Error al pre-aprobar terminal: ' + err.message, 'error');
+        } finally {
+          if (btn) btn.disabled = false;
         }
       };
 
@@ -3518,7 +3675,7 @@
           creada_en: ahora.toISOString(),
           notas,
 
-          // Campos de suscripción mensual (AuraPOS V2)
+          // Campos de suscripción mensual (VendlyPOS V2)
           activa: true,
           suspendida: false,
           vence_el: vence_el,
@@ -3587,23 +3744,20 @@
         }
       }
 
-      // ── GESTIÓN DE CATÁLOGO WEB (CLOUD FIRESTORE REST API) ──
+      // ── GESTIÓN DE CATÁLOGO WEB (POCKETBASE REST API) ──
 
-      async function consultarPinFirestore() {
-        const storeId = document.getElementById('txt-firestore-store-id').value.trim().toLowerCase();
-        const projectId = document.getElementById('txt-firestore-project-id').value.trim();
-        const resultDiv = document.getElementById('firestore-query-result');
+      let _currentPbStoreRecordId = null;
 
-        const lblName = document.getElementById('lbl-fs-name');
-        const lblPhone = document.getElementById('lbl-fs-phone');
-        const lblPin = document.getElementById('lbl-fs-pin');
+      async function consultarPinPocketBase() {
+        const storeId = document.getElementById('txt-pb-store-id').value.trim().toLowerCase();
+        const resultDiv = document.getElementById('pb-query-result');
+
+        const lblName = document.getElementById('lbl-pb-name');
+        const lblPhone = document.getElementById('lbl-pb-phone');
+        const lblPin = document.getElementById('lbl-pb-pin');
 
         if (!storeId) {
           showToast('Ingrese el ID de la tienda para consultar.', 'error');
-          return;
-        }
-        if (!projectId) {
-          showToast('Ingrese el ID del proyecto de Firebase.', 'error');
           return;
         }
 
@@ -3613,57 +3767,47 @@
         resultDiv.style.display = 'block';
 
         try {
-          const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/stores/${storeId}`;
+          const url = `https://api.vendlypos.shop/api/collections/stores/records?filter=(store_id='${encodeURIComponent(storeId)}')&perPage=1`;
           const response = await fetch(url);
-
-          if (response.status === 404) {
-            resultDiv.style.display = 'none';
-            showToast(`La tienda "${storeId}" no existe en la nube.`, 'error');
-            return;
-          }
 
           if (!response.ok) {
             throw new Error(`HTTP Error ${response.status}`);
           }
 
           const data = await response.json();
-          const fields = data.fields || {};
+          const items = data.items || [];
 
-          const businessName = fields.businessName?.stringValue || 'Sin Nombre';
-          const whatsappNumber = fields.whatsappNumber?.stringValue || 'Sin WhatsApp';
-          const syncPin = fields.syncPin?.stringValue || 'Sin PIN';
+          if (items.length === 0) {
+            resultDiv.style.display = 'none';
+            _currentPbStoreRecordId = null;
+            showToast(`La tienda "${storeId}" no existe en la nube.`, 'error');
+            return;
+          }
 
-          lblName.innerText = businessName;
-          lblPhone.innerText = whatsappNumber;
-          lblPin.innerText = syncPin;
+          const record = items[0];
+          _currentPbStoreRecordId = record.id;
+
+          lblName.innerText = record.business_name || record.store_name || 'Sin Nombre';
+          lblPhone.innerText = record.whatsapp || record.phone || 'Sin WhatsApp';
+          lblPin.innerText = record.sync_pin || 'Sin PIN';
           showToast('Datos de tienda cargados.', 'success');
         } catch (e) {
           resultDiv.style.display = 'none';
-          showToast('Error al consultar Firestore: ' + e.message, 'error');
+          showToast('Error al consultar PocketBase: ' + e.message, 'error');
         }
       }
 
-      async function cambiarPinFirestore() {
-        const storeId = document.getElementById('txt-firestore-store-id').value.trim().toLowerCase();
-        const projectId = document.getElementById('txt-firestore-project-id').value.trim();
-        const newPin = document.getElementById('txt-firestore-new-pin').value.trim();
-        const adminToken = document.getElementById('txt-firestore-admin-token').value.trim();
-        const btn = document.getElementById('btn-fs-update');
+      async function cambiarPinPocketBase() {
+        const storeId = document.getElementById('txt-pb-store-id').value.trim().toLowerCase();
+        const newPin = document.getElementById('txt-pb-new-pin').value.trim();
+        const btn = document.getElementById('btn-pb-update');
 
         if (!storeId) {
           showToast('Ingrese el ID de la tienda.', 'error');
           return;
         }
-        if (!projectId) {
-          showToast('Ingrese el ID del proyecto de Firebase.', 'error');
-          return;
-        }
         if (!newPin || newPin.length !== 4 || isNaN(newPin)) {
           showToast('El PIN nuevo debe tener exactamente 4 dígitos numéricos.', 'error');
-          return;
-        }
-        if (!adminToken) {
-          showToast('Ingrese el Token Secreto Administrativo.', 'error');
           return;
         }
 
@@ -3675,61 +3819,35 @@
         btn.innerText = 'Cambiando PIN...';
 
         try {
-          const baseUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
-
-          // 1. Crear documento en pin_resets/{storeId} conteniendo el nuevo pin y token
-          const resetPayload = {
-            fields: {
-              newPin: { stringValue: newPin },
-              adminToken: { stringValue: adminToken }
+          if (!_currentPbStoreRecordId) {
+            const getUrl = `https://api.vendlypos.shop/api/collections/stores/records?filter=(store_id='${encodeURIComponent(storeId)}')&perPage=1`;
+            const getRes = await fetch(getUrl);
+            if (getRes.ok) {
+              const getData = await getRes.json();
+              if (getData.items && getData.items.length > 0) {
+                _currentPbStoreRecordId = getData.items[0].id;
+              }
             }
-          };
+          }
 
-          showToast('Enviando solicitud de reinicio...', 'info');
-          const resetRes = await fetch(`${baseUrl}/pin_resets/${storeId}`, {
+          if (!_currentPbStoreRecordId) {
+            throw new Error(`La tienda "${storeId}" no existe en la nube.`);
+          }
+
+          const patchUrl = `https://api.vendlypos.shop/api/collections/stores/records/${_currentPbStoreRecordId}`;
+          const patchRes = await fetch(patchUrl, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(resetPayload)
+            body: JSON.stringify({ sync_pin: newPin })
           });
 
-          if (!resetRes.ok) {
-            throw new Error('Token administrativo incorrecto u otra restricción de reglas.');
+          if (!patchRes.ok) {
+            throw new Error('Fallo al actualizar el PIN en PocketBase.');
           }
-
-          // 2. Obtener la tienda para poder hacer el PATCH de forma segura con los campos existentes (Firestore PATCH requiere todos los campos requeridos por las reglas)
-          showToast('Obteniendo perfil de tienda...', 'info');
-          const storeRes = await fetch(`${baseUrl}/stores/${storeId}`);
-          if (!storeRes.ok) {
-            throw new Error('No se pudo leer el perfil de la tienda para actualizar.');
-          }
-          const storeData = await storeRes.json();
-          const storeFields = storeData.fields || {};
-
-          // 3. Modificar el campo syncPin y enviar de vuelta a stores/{storeId}
-          storeFields.syncPin = { stringValue: newPin };
-          const storePayload = { fields: storeFields };
-
-          showToast('Actualizando PIN de la tienda...', 'info');
-          const updateRes = await fetch(`${baseUrl}/stores/${storeId}?updateMask.fieldPaths=syncPin`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(storePayload)
-          });
-
-          if (!updateRes.ok) {
-            throw new Error('Fallo al actualizar el PIN de la tienda en Firestore.');
-          }
-
-          // 4. Limpiar: Eliminar el documento temporal en pin_resets/{storeId}
-          await fetch(`${baseUrl}/pin_resets/${storeId}`, {
-            method: 'DELETE'
-          });
 
           showToast('¡PIN de sincronización actualizado con éxito!', 'success');
-          document.getElementById('txt-firestore-new-pin').value = '';
-
-          // Refrescar consulta
-          await consultarPinFirestore();
+          document.getElementById('txt-pb-new-pin').value = '';
+          await consultarPinPocketBase();
         } catch (e) {
           showToast('Error al cambiar PIN: ' + e.message, 'error');
         } finally {
