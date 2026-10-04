@@ -440,6 +440,8 @@
       display: inline-block;
       width: 44px;
       height: 22px;
+      min-width: 44px;
+      flex-shrink: 0;
     }
 
     .switch input {
@@ -1671,6 +1673,20 @@
                       </div>
                     </label>
                     <label class="mod-tile">
+                      <input type="checkbox" id="lic-mod-dte">
+                      <div class="mod-tile-content">
+                        <span class="mod-tile-title">🧾 Facturación Electrónica (DTE)</span>
+                        <span class="mod-tile-desc">SVFE v2.0, transmisión MH y contingencias</span>
+                      </div>
+                    </label>
+                    <label class="mod-tile">
+                      <input type="checkbox" id="lic-mod-taller">
+                      <div class="mod-tile-content">
+                        <span class="mod-tile-title">🔧 Taller y Reparaciones</span>
+                        <span class="mod-tile-desc">Órdenes de servicio y recepción de equipos</span>
+                      </div>
+                    </label>
+                    <label class="mod-tile">
                       <input type="checkbox" id="lic-mod-creditos">
                       <div class="mod-tile-content">
                         <span class="mod-tile-title">📖 Libro de Créditos</span>
@@ -2681,6 +2697,8 @@
       // ════════════════════════════════════════════════════════════════
 
       const MODULOS_CONFIG = [
+        { id: 'dte', nombre: 'Facturación Electrónica (DTE)', icono: '🧾', desc: 'Emisión SVFE v2.0, transmisión MH y contingencias (Bajo Aprobación)' },
+        { id: 'taller', nombre: 'Taller / Reparaciones', icono: '🔧', desc: 'Órdenes de servicio, diagnóstico, estados técnicos y entrega (Bajo Aprobación)' },
         { id: 'farmacia', nombre: 'Farmacia', icono: '💊', desc: 'Control de lotes, FEFO, receta médica y principio activo' },
         { id: 'variantes', nombre: 'Tallas y Colores', icono: '👕', desc: 'Matriz de indumentaria y códigos de barra por variante' },
         { id: 'recetas', nombre: 'Gastronomía', icono: '🍳', desc: 'Recetas, escandallos y deducción de materias primas' },
@@ -2694,27 +2712,27 @@
       const PRESETS_GIRO = {
         general: {
           nombre: 'Abarrotes / General',
-          modulos: { farmacia: false, variantes: false, recetas: false, balanza: false, catalogo_web: false, multicaja: false, fidelizacion: true, creditos: true }
+          modulos: { dte: false, taller: false, farmacia: false, variantes: false, recetas: false, balanza: false, catalogo_web: false, multicaja: false, fidelizacion: true, creditos: true }
         },
         minimarket: {
           nombre: 'Minimarket / Súper',
-          modulos: { farmacia: true, variantes: false, recetas: false, balanza: true, catalogo_web: false, multicaja: true, fidelizacion: true, creditos: true }
+          modulos: { dte: false, taller: false, farmacia: true, variantes: false, recetas: false, balanza: true, catalogo_web: false, multicaja: true, fidelizacion: true, creditos: true }
         },
         farmacia: {
           nombre: 'Farmacia',
-          modulos: { farmacia: true, variantes: false, recetas: false, balanza: false, catalogo_web: false, multicaja: false, fidelizacion: true, creditos: true }
+          modulos: { dte: false, taller: false, farmacia: true, variantes: false, recetas: false, balanza: false, catalogo_web: false, multicaja: false, fidelizacion: true, creditos: true }
         },
         boutique: {
           nombre: 'Boutique / Ropa',
-          modulos: { farmacia: false, variantes: true, recetas: false, balanza: false, catalogo_web: true, multicaja: false, fidelizacion: true, creditos: true }
+          modulos: { dte: false, taller: false, farmacia: false, variantes: true, recetas: false, balanza: false, catalogo_web: true, multicaja: false, fidelizacion: true, creditos: true }
         },
         gastronomia: {
           nombre: 'Café / Restaurante',
-          modulos: { farmacia: false, variantes: false, recetas: true, balanza: false, catalogo_web: true, multicaja: true, fidelizacion: true, creditos: false }
+          modulos: { dte: false, taller: false, farmacia: false, variantes: false, recetas: true, balanza: false, catalogo_web: true, multicaja: true, fidelizacion: true, creditos: false }
         },
         full: {
           nombre: 'Full Suite',
-          modulos: { farmacia: true, variantes: true, recetas: true, balanza: true, catalogo_web: true, multicaja: true, fidelizacion: true, creditos: true }
+          modulos: { dte: true, taller: true, farmacia: true, variantes: true, recetas: true, balanza: true, catalogo_web: true, multicaja: true, fidelizacion: true, creditos: true }
         }
       };
 
@@ -2722,6 +2740,8 @@
         const m = lic.modulos || {};
         const p = (lic.plan || 'basico').toLowerCase();
         return {
+          dte: m.dte === true,
+          taller: m.taller === true,
           farmacia: m.farmacia === true,
           variantes: m.variantes === true,
           recetas: m.recetas === true,
@@ -2747,7 +2767,7 @@
         const preset = PRESETS_GIRO[presetKey];
         if (!preset) return;
         MODULOS_CONFIG.forEach(item => {
-          const chk = document.getElementById(`lic-mod-${item.id}`);
+          const chk = document.getElementById(`lic-mod-${item.id}`) || document.getElementById(`lic-mod-${item.id.replace('_', '-')}`);
           if (chk) chk.checked = !!preset.modulos[item.id];
         });
         const webChk = document.getElementById('lic-web');
@@ -2758,7 +2778,7 @@
         const anio = new Date().getFullYear();
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         const rand = (n) => Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-        return `AURA-${anio}-${rand(4)}-${rand(4)}`;
+        return `VENDLY-${anio}-${rand(4)}-${rand(4)}`;
       }
 
       async function cargarLicencias() {
@@ -3528,6 +3548,23 @@
         }
       }
 
+      async function toggleDteModulo(clave, actual) {
+        if (!dbUrl) { showToast('Conéctate a Firebase primero.', 'error'); return; }
+        const nuevoEstado = !actual;
+        const accion = nuevoEstado ? 'Aprobar Módulo DTE' : 'Desactivar Módulo DTE';
+        if (!confirm(`¿Deseas ${accion.toLowerCase()} para la clave ${clave}?`)) return;
+        try {
+          await fetchFirebase(`licencias/${clave}.json`, 'PATCH', {
+            'modulos/dte': nuevoEstado
+          });
+          await registrarAuditoria(clave, accion, `Módulo de Facturación Electrónica DTE ${nuevoEstado ? 'aprobado y habilitado' : 'desactivado'}.`);
+          showToast(`Módulo DTE ${nuevoEstado ? 'aprobado' : 'desactivado'} exitosamente.`, 'success');
+          cargarLicencias();
+        } catch (e) {
+          showToast('Error al actualizar estado del módulo DTE.', 'error');
+        }
+      }
+
       // ── Controladores del Modal de Módulos ──
       let claveModulosActiva = null;
 
@@ -3640,7 +3677,7 @@
 
         const modulos = {};
         MODULOS_CONFIG.forEach(item => {
-          const chk = document.getElementById(`lic-mod-${item.id}`);
+          const chk = document.getElementById(`lic-mod-${item.id}`) || document.getElementById(`lic-mod-${item.id.replace('_', '-')}`);
           modulos[item.id] = chk ? chk.checked : false;
         });
         if (plan === 'empresarial') {
