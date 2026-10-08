@@ -1617,6 +1617,7 @@
                       <button type="button" class="preset-btn" onclick="aplicarPresetCreacion('minimarket')">🛒 Minimarket</button>
                       <button type="button" class="preset-btn" onclick="aplicarPresetCreacion('farmacia')">💊 Farmacia</button>
                       <button type="button" class="preset-btn" onclick="aplicarPresetCreacion('boutique')">👕 Boutique</button>
+                      <button type="button" class="preset-btn" onclick="aplicarPresetCreacion('multirubro')">🔀 Multirrubro</button>
                       <button type="button" class="preset-btn" onclick="aplicarPresetCreacion('gastronomia')">🍳 Café / Rest.</button>
                       <button type="button" class="preset-btn" onclick="aplicarPresetCreacion('full')">⚡ Full Suite</button>
                     </div>
@@ -2725,6 +2726,10 @@
         boutique: {
           nombre: 'Boutique / Ropa',
           modulos: { dte: false, taller: false, farmacia: false, variantes: true, recetas: false, balanza: false, catalogo_web: true, multicaja: false, fidelizacion: true, creditos: true }
+        },
+        multirubro: {
+          nombre: 'Multirrubro (Farmacia + Ropa)',
+          modulos: { dte: false, taller: false, farmacia: true, variantes: true, recetas: false, balanza: true, catalogo_web: true, multicaja: false, fidelizacion: true, creditos: true }
         },
         gastronomia: {
           nombre: 'Café / Restaurante',
