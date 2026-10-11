@@ -1797,36 +1797,18 @@
           switchTab('tab-terminales');
         }
 
-        // Si se accede a través del backend de Flask como proxy
-        if (window.location.pathname === '/admin/dashboard_remoto') {
-          dbUrl = "/api/proxy/firebase";
-          dbSecret = ""; // El secret se gestiona en el backend
+        // Autoconectar con credenciales guardadas en localStorage
+        const savedUrl = localStorage.getItem('remote_fb_url');
+        const savedSecret = localStorage.getItem('remote_fb_secret');
 
-          // Conectar automáticamente y saltarse el login overlay de Firebase
-          const loginOverlay = document.getElementById('login-overlay');
-          if (loginOverlay) {
-            loginOverlay.classList.remove('active');
-          }
+        if (savedUrl) {
+          document.getElementById('fb-url').value = savedUrl;
+          document.getElementById('fb-secret').value = savedSecret || '';
+          dbUrl = savedUrl;
+          dbSecret = savedSecret || '';
 
-          cargarDatos();
-          limpiarTerminalesInactivas();
-
-          if (timerRef) clearInterval(timerRef);
-          timerRef = setInterval(cargarDatos, 30000);
-        } else {
-          // Fallback local: Cargar credenciales del localStorage si no es por proxy
-          const savedUrl = localStorage.getItem('remote_fb_url');
-          const savedSecret = localStorage.getItem('remote_fb_secret');
-
-          if (savedUrl) {
-            document.getElementById('fb-url').value = savedUrl;
-            document.getElementById('fb-secret').value = savedSecret || '';
-            dbUrl = savedUrl;
-            dbSecret = savedSecret || '';
-
-            // Autoconectar
-            conectarFirebase();
-          }
+          // Autoconectar
+          conectarFirebase();
         }
       });
 
@@ -2094,16 +2076,39 @@
               let demoBadge = '';
               let btnAprobarDemo = '';
               let btnReiniciarDemo = '';
-              if (t.tipo_instalacion === 'demo' || t.aprobado !== undefined) {
-                if (t.aprobado === false) {
-                  demoBadge = '<span class="badge" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;font-size:0.65rem;margin-left:0.3rem;">🟡 Demo Pendiente</span>';
-                  btnAprobarDemo = `<button class="btn btn-sm btn-primary" style="padding:0.25rem 0.5rem;font-size:0.75rem;margin-right:0.35rem;display:inline-flex;align-items:center;gap:3px;" onclick="aprobarDemo('${t.key}')" title="Aprobar 15 días de Demo">✅ Aprobar Demo</button>`;
-                } else if (t.aprobado === true) {
-                  const dias = t.dias_demo || 15;
-                  demoBadge = `<span class="badge badge-success" style="font-size:0.65rem;margin-left:0.3rem;">✓ Demo (${dias}d)</span>`;
-                  btnReiniciarDemo = `<button class="btn btn-sm btn-outline" style="padding:0.25rem 0.5rem;font-size:0.75rem;margin-right:0.35rem;display:inline-flex;align-items:center;gap:3px;" onclick="reiniciarDemo('${t.key}')" title="Reiniciar Período Demo">🔄 Reiniciar Demo</button>`;
-                }
+              let btnGratuito = '';
+              let btnVincularLic = '';
+
+              const esDemo = (t.tipo_instalacion === 'demo' || t.aprobado !== undefined || t.mode === 'demo' || t.mode === 'demo_expired_locked');
+              const dias = t.dias_demo || 15;
+              const permitirGratuito = Boolean(t.permitir_gratuito);
+              const isLocked = Boolean(t.bloqueado);
+
+              if (isLocked) {
+                demoBadge = '<span class="badge" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:0.65rem;margin-left:0.3rem;">🚫 Bloqueada</span>';
+              } else if (t.license_key || (t.plan_asignado && !['demo', 'gratuito'].includes(t.plan_asignado))) {
+                demoBadge = `<span class="badge" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:#818cf8;font-size:0.65rem;margin-left:0.3rem;">⭐ Licencia Comercial (${escapeHTML(t.plan_asignado || 'Activa')})</span>`;
+              } else if (permitirGratuito) {
+                demoBadge = '<span class="badge badge-success" style="font-size:0.65rem;margin-left:0.3rem;">🟢 Plan Gratuito Autorizado</span>';
+              } else if (t.mode === 'demo_expired_locked' || (t.dias_restantes !== undefined && t.dias_restantes <= 0 && esDemo)) {
+                demoBadge = '<span class="badge" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;font-size:0.65rem;margin-left:0.3rem;">🔴 Demo Vencida (Bloqueada)</span>';
+              } else if (t.aprobado === false) {
+                demoBadge = '<span class="badge" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;font-size:0.65rem;margin-left:0.3rem;">🟡 Demo Pendiente</span>';
+                btnAprobarDemo = `<button class="btn btn-sm btn-primary" style="padding:0.25rem 0.5rem;font-size:0.75rem;margin-right:0.35rem;display:inline-flex;align-items:center;gap:3px;" onclick="aprobarDemo('${t.key}')" title="Aprobar 15 días de Demo">✅ Aprobar Demo</button>`;
+              } else if (t.aprobado === true || esDemo) {
+                demoBadge = `<span class="badge badge-success" style="font-size:0.65rem;margin-left:0.3rem;">✓ Demo Activa (${dias}d)</span>`;
+                btnReiniciarDemo = `<button class="btn btn-sm btn-outline" style="padding:0.25rem 0.5rem;font-size:0.75rem;margin-right:0.35rem;display:inline-flex;align-items:center;gap:3px;" onclick="reiniciarDemo('${t.key}')" title="Extender o Reiniciar Período Demo">⏱️ Extender Demo</button>`;
               }
+
+              // Botón rápido de Plan Gratuito
+              if (permitirGratuito) {
+                btnGratuito = `<button class="btn btn-sm btn-outline" style="padding:0.25rem 0.5rem;font-size:0.75rem;margin-right:0.35rem;color:#f87171;border-color:rgba(239,68,68,0.4);" onclick="togglePlanGratuito('${t.key}', false)" title="Revocar Plan Gratuito (bloqueará si demo vencida)">🚫 Quitar Gratuito</button>`;
+              } else {
+                btnGratuito = `<button class="btn btn-sm btn-outline" style="padding:0.25rem 0.5rem;font-size:0.75rem;margin-right:0.35rem;color:#34d399;border-color:rgba(52,211,153,0.4);" onclick="togglePlanGratuito('${t.key}', true)" title="Conceder Plan Gratuito de cortesía">🎁 Conceder Gratuito</button>`;
+              }
+
+              // Botón Vincular Licencia
+              btnVincularLic = `<button class="btn btn-sm btn-outline" style="padding:0.25rem 0.5rem;font-size:0.75rem;margin-right:0.35rem;color:#a5b4fc;border-color:rgba(165,180,252,0.4);" onclick="vincularLicencia('${t.key}')" title="Asignar clave comercial">🔑 Licencia</button>`;
 
               // RENDER TABLA (ESCRITORIO)
               tableHTML += `
@@ -2133,6 +2138,8 @@
                   <div class="row-actions">
                     ${btnAprobarDemo}
                     ${btnReiniciarDemo}
+                    ${btnGratuito}
+                    ${btnVincularLic}
                     <button class="btn-icon btn-icon-danger" onclick="eliminarTerminal('${t.key}')" title="Eliminar Registro">
                       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                     </button>
@@ -2178,6 +2185,8 @@
                   <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                     ${btnAprobarDemo}
                     ${btnReiniciarDemo}
+                    ${btnGratuito}
+                    ${btnVincularLic}
                     <span style="font-size: 0.75rem; color: var(--text-soft); font-weight: 500;">Bloqueado:</span>
                     <label class="switch switch-lock">
                       <input type="checkbox" ${blockedChecked} onchange="toggleBloqueo('${t.key}', this.checked)">
@@ -2286,6 +2295,44 @@
         } catch (e) {
           console.error(e);
           showToast('Error al reiniciar demo: ' + e.message, 'error');
+        }
+      };
+
+      window.togglePlanGratuito = async function(key, conceder) {
+        const accion = conceder ? "conceder Plan Gratuito de cortesía" : "revocar el Plan Gratuito (bloqueará si la demo está vencida)";
+        if (!confirm(`¿Estás seguro de ${accion} a la terminal '${key}'?`)) {
+          return;
+        }
+        try {
+          await fetchFirebase(`terminals/${key}.json`, 'PATCH', {
+            permitir_gratuito: conceder,
+            plan_asignado: conceder ? "gratuito" : "demo"
+          });
+          showToast(conceder ? `¡Plan Gratuito concedido a '${key}'!` : `Plan Gratuito revocado para '${key}'.`, 'success');
+          await registrarAuditoria('SISTEMA', conceder ? 'Plan Gratuito Concedido' : 'Plan Gratuito Revocado', `Se actualizó permitir_gratuito=${conceder} para terminal '${key}'.`);
+          cargarDatos();
+        } catch (e) {
+          console.error(e);
+          showToast('Error al actualizar plan gratuito: ' + e.message, 'error');
+        }
+      };
+
+      window.vincularLicencia = async function(key) {
+        const licKey = prompt(`Ingrese la clave de licencia comercial para vincular a la terminal '${key}':`);
+        if (!licKey || !licKey.trim()) return;
+        const clave = licKey.trim().toUpperCase();
+        try {
+          await fetchFirebase(`terminals/${key}.json`, 'PATCH', {
+            license_key: clave,
+            clave_licencia: clave,
+            bloqueado: false
+          });
+          showToast(`¡Licencia comercial '${clave}' vinculada a '${key}'!`, 'success');
+          await registrarAuditoria('SISTEMA', 'Licencia Vinculada', `Se asignó la clave comercial '${clave}' a terminal '${key}'.`);
+          cargarDatos();
+        } catch (e) {
+          console.error(e);
+          showToast('Error al vincular licencia: ' + e.message, 'error');
         }
       };
 
