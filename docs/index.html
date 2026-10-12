@@ -195,6 +195,8 @@
       flex-direction: column;
       gap: 0.5rem;
       margin-bottom: 1.25rem;
+      min-width: 0;
+      width: 100%;
     }
 
     label {
@@ -205,6 +207,9 @@
 
     .input-field {
       width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--card-border);
       border-radius: var(--radius-sm);
@@ -223,6 +228,13 @@
     }
 
     select.input-field {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
@@ -233,8 +245,6 @@
       padding-right: 2.5rem;
       cursor: pointer;
     }
-
-
 
     .input-field:focus {
       border-color: var(--primary);
@@ -357,6 +367,9 @@
       flex-direction: column;
       gap: 0.75rem;
       transition: var(--transition);
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .terminal-card:hover {
@@ -368,6 +381,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .t-card-details {
@@ -379,12 +394,16 @@
       padding: 0.25rem 0;
       border-top: 1px solid rgba(255, 255, 255, 0.03);
       border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      min-width: 0;
     }
 
     .t-card-detail-item {
       display: flex;
       flex-direction: column;
       gap: 0.1rem;
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
 
     .t-card-detail-item span:first-child {
@@ -666,6 +685,9 @@
       transition: background 0.2s;
       cursor: pointer;
       font-size: 0.78rem;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .log-entry:hover {
@@ -744,20 +766,25 @@
     /* Media Queries específicas para móviles */
     @media (max-width: 700px) {
       body {
-        padding: 1rem 0.5rem;
+        padding: 0.75rem 0.5rem;
       }
 
       .header {
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.75rem;
         align-items: stretch;
         padding: 1rem;
         text-align: center;
       }
 
       .header-logo {
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: center;
         gap: 0.5rem;
+      }
+
+      .header-title {
+        font-size: 1.15rem;
       }
 
       .btn-logout {
@@ -778,8 +805,17 @@
       }
 
       .toast-container {
-        right: 1.5rem;
-        bottom: 1.5rem;
+        right: 1rem;
+        left: 1rem;
+        bottom: 1rem;
+        width: auto;
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .t-card-details {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -909,6 +945,8 @@
       cursor: pointer;
       user-select: none;
       transition: var(--transition);
+      min-width: 0;
+      box-sizing: border-box;
     }
 
     .mod-tile:hover {
@@ -1572,7 +1610,7 @@
                 🔑 Crear Nueva Licencia
               </h4>
 
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.75rem;">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap:0.75rem; width:100%;">
                 <div class="form-group" style="margin-bottom:0;">
                   <label for="lic-cliente">Cliente *</label>
                   <input type="text" id="lic-cliente" class="input-field" placeholder="Nombre del cliente">
@@ -1607,7 +1645,7 @@
                   <input type="text" id="lic-notas" class="input-field" placeholder="Opcional...">
                 </div>
                 <!-- Módulos y Presets Granulares -->
-                <div style="grid-column: 1 / -1; margin-top: 0.6rem;">
+                <div style="grid-column: 1 / -1; margin-top: 0.6rem; min-width: 0;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
                     <label style="font-weight: 600; color: #fff; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
                       🧩 Módulos y Funcionalidades Autorizadas:
@@ -1624,7 +1662,7 @@
                     </div>
                   </div>
 
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.5rem; background: rgba(0,0,0,0.18); padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 0.5rem; background: rgba(0,0,0,0.18); padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); width: 100%; box-sizing: border-box;">
                     <label class="mod-tile">
                       <input type="checkbox" id="lic-mod-farmacia">
                       <div class="mod-tile-content">
@@ -1693,6 +1731,13 @@
                       <div class="mod-tile-content">
                         <span class="mod-tile-title">📖 Libro de Créditos</span>
                         <span class="mod-tile-desc">Venta al fiar, cuentas por cobrar</span>
+                      </div>
+                    </label>
+                    <label class="mod-tile">
+                      <input type="checkbox" id="lic-mod-restaurante">
+                      <div class="mod-tile-content">
+                        <span class="mod-tile-title">🍽️ Restaurante y Mesas</span>
+                        <span class="mod-tile-desc">Salones, comanderas y KDS de cocina</span>
                       </div>
                     </label>
                   </div>
@@ -2750,59 +2795,63 @@
         { id: 'taller', nombre: 'Taller / Reparaciones', icono: '🔧', desc: 'Órdenes de servicio, diagnóstico, estados técnicos y entrega (Bajo Aprobación)' },
         { id: 'farmacia', nombre: 'Farmacia', icono: '💊', desc: 'Control de lotes, FEFO, receta médica y principio activo' },
         { id: 'variantes', nombre: 'Tallas y Colores', icono: '👕', desc: 'Matriz de indumentaria y códigos de barra por variante' },
-        { id: 'recetas', nombre: 'Gastronomía', icono: '🍳', desc: 'Recetas, escandallos y deducción de materias primas' },
+        { id: 'recetas', nombre: 'Gastronomía / Recetas', icono: '🍳', desc: 'Recetas, escandallos y deducción de materias primas' },
         { id: 'balanza', nombre: 'Balanza', icono: '⚖️', desc: 'Báscula comercial, pesaje en vivo y venta decimal' },
         { id: 'catalogo_web', nombre: 'Catálogo Web', icono: '🌐', desc: 'Tienda digital en la nube y pedidos online' },
         { id: 'multicaja', nombre: 'Multi-Caja', icono: '🖥️', desc: 'Red local servidor y terminales secundarias' },
         { id: 'fidelizacion', nombre: 'Puntos', icono: '⭐', desc: 'Acumulación y canje de puntos de clientes' },
         { id: 'creditos', nombre: 'Créditos', icono: '📖', desc: 'Libro de fiar, cuentas por cobrar y abonos' },
+        { id: 'restaurante', nombre: 'Restaurante / Mesas', icono: '🍽️', desc: 'Salones, mapa de mesas, KDS de cocina y comanderas' },
       ];
 
       const PRESETS_GIRO = {
         general: {
           nombre: 'Abarrotes / General',
-          modulos: { dte: false, taller: false, farmacia: false, variantes: false, recetas: false, balanza: false, catalogo_web: false, multicaja: false, fidelizacion: true, creditos: true }
+          modulos: { dte: false, taller: false, farmacia: false, variantes: false, recetas: false, balanza: false, catalogo_web: false, multicaja: false, fidelizacion: true, creditos: true, restaurante: false }
         },
         minimarket: {
           nombre: 'Minimarket / Súper',
-          modulos: { dte: false, taller: false, farmacia: true, variantes: false, recetas: false, balanza: true, catalogo_web: false, multicaja: true, fidelizacion: true, creditos: true }
+          modulos: { dte: false, taller: false, farmacia: true, variantes: false, recetas: false, balanza: true, catalogo_web: false, multicaja: true, fidelizacion: true, creditos: true, restaurante: false }
         },
         farmacia: {
           nombre: 'Farmacia',
-          modulos: { dte: false, taller: false, farmacia: true, variantes: false, recetas: false, balanza: false, catalogo_web: false, multicaja: false, fidelizacion: true, creditos: true }
+          modulos: { dte: false, taller: false, farmacia: true, variantes: false, recetas: false, balanza: false, catalogo_web: false, multicaja: false, fidelizacion: true, creditos: true, restaurante: false }
         },
         boutique: {
           nombre: 'Boutique / Ropa',
-          modulos: { dte: false, taller: false, farmacia: false, variantes: true, recetas: false, balanza: false, catalogo_web: true, multicaja: false, fidelizacion: true, creditos: true }
+          modulos: { dte: false, taller: false, farmacia: false, variantes: true, recetas: false, balanza: false, catalogo_web: true, multicaja: false, fidelizacion: true, creditos: true, restaurante: false }
         },
         multirubro: {
           nombre: 'Multirrubro (Farmacia + Ropa)',
-          modulos: { dte: false, taller: false, farmacia: true, variantes: true, recetas: false, balanza: true, catalogo_web: true, multicaja: false, fidelizacion: true, creditos: true }
+          modulos: { dte: false, taller: false, farmacia: true, variantes: true, recetas: false, balanza: true, catalogo_web: true, multicaja: false, fidelizacion: true, creditos: true, restaurante: false }
         },
         gastronomia: {
           nombre: 'Café / Restaurante',
-          modulos: { dte: false, taller: false, farmacia: false, variantes: false, recetas: true, balanza: false, catalogo_web: true, multicaja: true, fidelizacion: true, creditos: false }
+          modulos: { dte: false, taller: false, farmacia: false, variantes: false, recetas: true, balanza: false, catalogo_web: true, multicaja: true, fidelizacion: true, creditos: false, restaurante: true }
         },
         full: {
           nombre: 'Full Suite',
-          modulos: { dte: true, taller: true, farmacia: true, variantes: true, recetas: true, balanza: true, catalogo_web: true, multicaja: true, fidelizacion: true, creditos: true }
+          modulos: { dte: true, taller: true, farmacia: true, variantes: true, recetas: true, balanza: true, catalogo_web: true, multicaja: true, fidelizacion: true, creditos: true, restaurante: true }
         }
       };
 
       function getLicenciaModulos(lic) {
         const m = lic.modulos || {};
         const p = (lic.plan || 'basico').toLowerCase();
+        const isEmpresarial = (p === 'empresarial');
+        const isPro = (p === 'pro' || p === 'premium' || isEmpresarial);
         return {
           dte: m.dte === true,
-          taller: m.taller === true,
+          taller: (m.taller === true || isEmpresarial),
           farmacia: m.farmacia === true,
           variantes: m.variantes === true,
           recetas: m.recetas === true,
           balanza: m.balanza === true,
-          catalogo_web: (m.catalogo_web === true || lic.permitir_sitio_web === true),
-          multicaja: (m.multicaja === true || p === 'empresarial'),
-          fidelizacion: (m.fidelizacion === true || p === 'premium' || p === 'empresarial'),
-          creditos: (m.creditos === true || p === 'premium' || p === 'empresarial'),
+          catalogo_web: (m.catalogo_web === true || lic.permitir_sitio_web === true || isEmpresarial),
+          multicaja: (m.multicaja === true || isEmpresarial),
+          fidelizacion: (m.fidelizacion === true || isPro),
+          creditos: (m.creditos === true || isPro),
+          restaurante: (m.restaurante === true || isEmpresarial),
         };
       }
 
@@ -3155,22 +3204,22 @@
           </tr>
           <tr id="payments-${clave}" style="display:none; background:rgba(0,0,0,0.18);">
             <td colspan="8" style="padding:1rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.06);">
-              <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap:1.25rem;">
-                <div>
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap:1.25rem; width:100%;">
+                <div style="min-width:0; overflow-x:auto;">
                   <div style="font-weight:600; color:var(--success); font-size:0.85rem; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.3rem;">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                     Historial de Pagos
                   </div>
                   ${pagosHTML}
                 </div>
-                <div>
+                <div style="min-width:0; overflow-x:auto;">
                   <div style="font-weight:600; color:#38bdf8; font-size:0.85rem; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.3rem;">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                     Auditoría de Licencia
                   </div>
                   ${auditoriaHTML}
                 </div>
-                <div>
+                <div style="min-width:0; overflow-x:auto;">
                   <div style="font-weight:600; color:#34d399; font-size:0.85rem; margin-bottom:0.5rem; display:flex; align-items:center; justify-content:space-between;">
                     <span style="display:flex; align-items:center; gap:0.3rem;">
                       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -3182,7 +3231,7 @@
                     ${modulosChipsHTML}
                   </div>
                 </div>
-                <div>
+                <div style="min-width:0; overflow-x:auto;">
                   <div style="font-weight:600; color:var(--warning); font-size:0.85rem; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.3rem;">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
                     Equipos Vinculados
@@ -3213,20 +3262,20 @@
                 <div style="display:flex; flex-wrap:wrap; gap:0.2rem; margin-top:0.25rem;">${modulosChipsHTML}</div>
               </div>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.75rem;">
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px; color:#34d399; border-color:rgba(52,211,153,0.3);" onclick="abrirModalModulos('${escapeHTML(clave)}')">🧩 Módulos</button>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px;" onclick="copiarClave('${escapeHTML(clave)}')">Copiar</button>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px; color:#38bdf8; border-color:rgba(56,189,248,0.2);" onclick="toggleMobilePagos('${escapeHTML(clave)}')">Detalles</button>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px; color:var(--success); border-color:rgba(16,185,129,0.2);" onclick="registrarPago('${escapeHTML(clave)}')">Pago</button>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px; color:#fb7185; border-color:rgba(251,113,133,0.2);" onclick="ajustarDias('${escapeHTML(clave)}')">Días</button>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px; color:#a78bfa; border-color:rgba(167,139,250,0.2);" onclick="cambiarPlan('${escapeHTML(clave)}', '${escapeHTML(lic.plan || 'basico')}')">Plan</button>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px;" onclick="restablecerActivaciones('${escapeHTML(clave)}')">Rest. Act.</button>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px; color:${lic.permitir_sitio_web === true ? 'var(--primary)' : 'var(--text-muted)'}; border-color:${lic.permitir_sitio_web === true ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.1)'};" onclick="toggleSitioWeb('${escapeHTML(clave)}', ${lic.permitir_sitio_web === true})">
+            <div class="t-card-actions" style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.75rem; width: 100%;">
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:0.4rem 0.5rem; flex:1 1 calc(33.333% - 0.35rem); min-width:75px; border-radius:6px; color:#34d399; border-color:rgba(52,211,153,0.3);" onclick="abrirModalModulos('${escapeHTML(clave)}')">🧩 Módulos</button>
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:0.4rem 0.5rem; flex:1 1 calc(33.333% - 0.35rem); min-width:75px; border-radius:6px;" onclick="copiarClave('${escapeHTML(clave)}')">Copiar</button>
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:0.4rem 0.5rem; flex:1 1 calc(33.333% - 0.35rem); min-width:75px; border-radius:6px; color:#38bdf8; border-color:rgba(56,189,248,0.2);" onclick="toggleMobilePagos('${escapeHTML(clave)}')">Detalles</button>
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:0.4rem 0.5rem; flex:1 1 calc(33.333% - 0.35rem); min-width:75px; border-radius:6px; color:var(--success); border-color:rgba(16,185,129,0.2);" onclick="registrarPago('${escapeHTML(clave)}')">Pago</button>
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:0.4rem 0.5rem; flex:1 1 calc(33.333% - 0.35rem); min-width:75px; border-radius:6px; color:#fb7185; border-color:rgba(251,113,133,0.2);" onclick="ajustarDias('${escapeHTML(clave)}')">Días</button>
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:0.4rem 0.5rem; flex:1 1 calc(33.333% - 0.35rem); min-width:75px; border-radius:6px; color:#a78bfa; border-color:rgba(167,139,250,0.2);" onclick="cambiarPlan('${escapeHTML(clave)}', '${escapeHTML(lic.plan || 'basico')}')">Plan</button>
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:0.4rem 0.5rem; flex:1 1 calc(33.333% - 0.35rem); min-width:75px; border-radius:6px;" onclick="restablecerActivaciones('${escapeHTML(clave)}')">Rest. Act.</button>
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:0.4rem 0.5rem; flex:1 1 calc(50% - 0.35rem); min-width:105px; border-radius:6px; color:${lic.permitir_sitio_web === true ? 'var(--primary)' : 'var(--text-muted)'}; border-color:${lic.permitir_sitio_web === true ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.1)'};" onclick="toggleSitioWeb('${escapeHTML(clave)}', ${lic.permitir_sitio_web === true})">
                 ${lic.permitir_sitio_web === true ? '🌐 Desact. Web' : '🌐 Act. Web'}
               </button>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px; color:var(--warning); border-color:rgba(245,158,11,0.2);" onclick="enviarAvisoVencimiento('${escapeHTML(clave)}', '${escapeHTML(lic.cliente || '')}')">Aviso</button>
-              <button class="btn btn-danger" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px;" onclick="eliminarLicencia('${escapeHTML(clave)}', '${escapeHTML(lic.cliente || '')}')">Eliminar</button>
-              <button class="btn btn-outline ${isSuspended ? 'btn-success' : ''}" style="font-size:0.75rem; padding:0.4rem; width:100%; border-radius:6px; grid-column: span 3; ${isSuspended ? '' : 'color:var(--danger); border-color:rgba(239,68,68,0.2);'}" onclick="toggleSuspender('${escapeHTML(clave)}', ${isSuspended})">
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:0.4rem 0.5rem; flex:1 1 calc(50% - 0.35rem); min-width:105px; border-radius:6px; color:var(--warning); border-color:rgba(245,158,11,0.2);" onclick="enviarAvisoVencimiento('${escapeHTML(clave)}', '${escapeHTML(lic.cliente || '')}')">Aviso</button>
+              <button class="btn btn-danger" style="font-size:0.72rem; padding:0.4rem 0.5rem; flex:1 1 100%; border-radius:6px;" onclick="eliminarLicencia('${escapeHTML(clave)}', '${escapeHTML(lic.cliente || '')}')">Eliminar</button>
+              <button class="btn btn-outline ${isSuspended ? 'btn-success' : ''}" style="font-size:0.75rem; padding:0.45rem 0.5rem; width:100%; flex:1 1 100%; border-radius:6px; ${isSuspended ? '' : 'color:var(--danger); border-color:rgba(239,68,68,0.2);'}" onclick="toggleSuspender('${escapeHTML(clave)}', ${isSuspended})">
                 ${isSuspended ? 'Reactivar Licencia' : 'Suspender Licencia'}
               </button>
             </div>
@@ -3338,6 +3387,8 @@
           if (c) c.checked = false;
           const dte = document.getElementById('lic-mod-dte');
           if (dte) dte.checked = false;
+          const rest = document.getElementById('lic-mod-restaurante');
+          if (rest) rest.checked = false;
           if (webCheckbox) webCheckbox.checked = false;
         } else if (val === 'gratuito') {
           diasInput.value = 9999;
@@ -3347,6 +3398,8 @@
           aplicarPresetCreacion('general');
           const c = document.getElementById('lic-mod-creditos');
           if (c) c.checked = false;
+          const rest = document.getElementById('lic-mod-restaurante');
+          if (rest) rest.checked = false;
           if (webCheckbox) webCheckbox.checked = false;
         } else if (val === 'demo-7') {
           diasInput.value = 7;
@@ -3385,6 +3438,8 @@
           if (actInput) actInput.value = 5;
           aplicarPresetCreacion('full');
           if (webCheckbox) webCheckbox.checked = true;
+          const rest = document.getElementById('lic-mod-restaurante');
+          if (rest) rest.checked = true;
         } else {
           diasInput.disabled = false;
           diasInput.title = '';
@@ -3464,6 +3519,8 @@
               patchData.permitir_sitio_web = true;
               patchData['modulos/catalogo_web'] = true;
               patchData['modulos/multicaja'] = true;
+              patchData['modulos/restaurante'] = true;
+              patchData['modulos/taller'] = true;
             }
           }
           await fetchFirebase(`licencias/${clave}.json`, 'PATCH', patchData);
@@ -3815,8 +3872,8 @@
           cargarLicencias();
           // Limpiar formulario
           ['lic-cliente', 'lic-email', 'lic-notas'].forEach(id => document.getElementById(id).value = '');
-          document.getElementById('lic-plan').value = 'premium';
-          onPlanChange('premium');
+          document.getElementById('lic-plan').value = 'pro';
+          onPlanChange('pro');
           document.getElementById('lic-activaciones').value = '1';
         } catch (e) {
           showToast('Error al crear la licencia en Firebase.', 'error');
