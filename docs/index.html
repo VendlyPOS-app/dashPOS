@@ -73,7 +73,7 @@
     /* Contenedor Principal */
     .container {
       width: 100%;
-      max-width: 1100px;
+      max-width: 1360px;
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
@@ -518,7 +518,9 @@
     /* Acciones de Fila */
     .row-actions {
       display: flex;
-      gap: 0.5rem;
+      align-items: center;
+      gap: 0.3rem;
+      flex-wrap: nowrap;
     }
 
     .btn-icon {
@@ -528,10 +530,11 @@
       cursor: pointer;
       padding: 0.35rem;
       border-radius: var(--radius-sm);
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       transition: var(--transition);
+      flex-shrink: 0;
     }
 
     .btn-icon:hover {
@@ -1029,7 +1032,7 @@
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
-      padding: 0.12rem 0.45rem;
+      padding: 0.15rem 0.45rem;
       border-radius: 4px;
       font-size: 0.68rem;
       font-weight: 500;
@@ -1037,6 +1040,10 @@
       border: 1px solid rgba(99, 102, 241, 0.25);
       color: #c7d2fe;
       margin: 0.1rem 0.15rem 0.1rem 0;
+      white-space: nowrap;
+      user-select: none;
+      line-height: 1.2;
+      flex-shrink: 0;
     }
   </style>
 </head>
@@ -1242,16 +1249,16 @@
 
           <!-- Renderizado Desktop (Tabla) -->
           <div class="table-responsive desktop-only">
-            <table id="table-terminals">
+            <table id="table-terminals" style="min-width: 960px;">
               <thead>
                 <tr>
-                  <th>Equipo / IP</th>
-                  <th>Usuario</th>
-                  <th>Versión</th>
-                  <th>Último Contacto</th>
-                  <th>Estado</th>
-                  <th style="text-align: center;">Bloqueado (Kill-Switch)</th>
-                  <th>Acciones</th>
+                  <th style="min-width: 170px;">Equipo / IP</th>
+                  <th style="min-width: 110px;">Usuario</th>
+                  <th style="white-space: nowrap; width: 85px;">Versión</th>
+                  <th style="white-space: nowrap; min-width: 120px;">Último Contacto</th>
+                  <th style="white-space: nowrap; width: 110px;">Estado</th>
+                  <th style="white-space: nowrap; text-align: center; width: 150px;">Bloqueado (Kill-Switch)</th>
+                  <th style="white-space: nowrap; width: 180px;">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -1571,17 +1578,17 @@
 
               <!-- Desktop -->
               <div class="table-responsive desktop-only">
-                <table>
+                <table id="table-licenses" style="min-width: 1120px;">
                   <thead>
                     <tr>
-                      <th>Clave</th>
-                      <th>Cliente</th>
-                      <th>Plan</th>
-                      <th>Estado</th>
-                      <th>Web</th>
-                      <th>Expira</th>
-                      <th style="text-align:center;">Activaciones</th>
-                      <th>Acciones</th>
+                      <th style="white-space: nowrap; width: 175px;">Clave</th>
+                      <th style="min-width: 220px;">Cliente</th>
+                      <th style="white-space: nowrap; width: 100px;">Plan</th>
+                      <th style="white-space: nowrap; width: 90px;">Estado</th>
+                      <th style="white-space: nowrap; width: 110px;">Web</th>
+                      <th style="white-space: nowrap; width: 105px;">Expira</th>
+                      <th style="white-space: nowrap; text-align:center; width: 90px;">Activaciones</th>
+                      <th style="white-space: nowrap; width: 330px;">Acciones</th>
                     </tr>
                   </thead>
                   <tbody id="table-licenses-body">
@@ -2855,14 +2862,24 @@
         };
       }
 
-      function renderModulosChips(modulos) {
-        let chips = '';
-        MODULOS_CONFIG.forEach(item => {
-          if (modulos[item.id]) {
-            chips += `<span class="mod-chip" title="${escapeHTML(item.desc)}">${item.icono} ${escapeHTML(item.nombre)}</span>`;
-          }
-        });
-        return chips || `<span style="font-size:0.7rem; color:var(--text-muted);">Sin módulos adicionales</span>`;
+      function renderModulosChips(modulos, maxVisible = 3) {
+        const activos = MODULOS_CONFIG.filter(item => modulos[item.id]);
+        if (activos.length === 0) {
+          return `<span style="font-size:0.7rem; color:var(--text-muted); white-space:nowrap;">Sin módulos adicionales</span>`;
+        }
+        if (maxVisible && activos.length > maxVisible) {
+          const visibles = activos.slice(0, maxVisible);
+          const restantes = activos.length - maxVisible;
+          const nombresRestantes = activos.slice(maxVisible).map(a => `${a.icono} ${a.nombre}`).join(' • ');
+          let chips = visibles.map(item =>
+            `<span class="mod-chip" title="${escapeHTML(item.desc)}">${item.icono} ${escapeHTML(item.nombre)}</span>`
+          ).join('');
+          chips += `<span class="mod-chip" style="background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); color:var(--text-soft); cursor:pointer;" title="Módulos adicionales:\n${escapeHTML(nombresRestantes)}">+${restantes} más</span>`;
+          return chips;
+        }
+        return activos.map(item =>
+          `<span class="mod-chip" title="${escapeHTML(item.desc)}">${item.icono} ${escapeHTML(item.nombre)}</span>`
+        ).join('');
       }
 
       function aplicarPresetCreacion(presetKey) {
@@ -3143,24 +3160,25 @@
           }
 
           const modulos = getLicenciaModulos(lic);
-          const modulosChipsHTML = renderModulosChips(modulos);
+          const modulosChipsHTML = renderModulosChips(modulos, 3);
+          const todosModulosChipsHTML = renderModulosChips(modulos, 0);
 
           desktopHTML += `
           <tr>
-            <td><code style="font-size:0.78rem;color:var(--text-soft);user-select:all;cursor:pointer;" onclick="copiarClave('${escapeHTML(clave)}')" title="Clic para copiar">${escapeHTML(clave)}</code></td>
-            <td>
+            <td style="white-space:nowrap;"><code style="font-size:0.78rem;font-family:'Outfit',monospace;font-weight:600;letter-spacing:0.04em;color:var(--text-soft);user-select:all;cursor:pointer;white-space:nowrap;" onclick="copiarClave('${escapeHTML(clave)}')" title="Clic para copiar">${escapeHTML(clave)}</code></td>
+            <td style="min-width:220px;">
               <div style="font-weight:600;color:#fff;">${escapeHTML(lic.cliente || '—')}</div>
               <div style="font-size:0.75rem;color:var(--text-muted);">${escapeHTML(lic.email || '')}</div>
-              <div style="margin-top:0.35rem; display:flex; flex-wrap:wrap; gap:0.2rem; align-items:center;">
+              <div style="margin-top:0.35rem; display:flex; flex-wrap:wrap; gap:0.25rem; align-items:center;">
                 ${modulosChipsHTML}
               </div>
             </td>
-            <td>${planBadge}</td>
-            <td>${estadoBadge}</td>
-            <td>${webBadge}</td>
-            <td style="font-size:0.82rem;color:var(--text-soft);">${expira}</td>
-            <td style="text-align:center;font-size:0.82rem;">${act}</td>
-            <td>
+            <td style="white-space:nowrap;">${planBadge}</td>
+            <td style="white-space:nowrap;">${estadoBadge}</td>
+            <td style="white-space:nowrap;">${webBadge}</td>
+            <td style="font-size:0.82rem;color:var(--text-soft);white-space:nowrap;">${expira}</td>
+            <td style="text-align:center;font-size:0.82rem;white-space:nowrap;">${act}</td>
+            <td style="white-space:nowrap;">
               <div class="row-actions">
                 <button class="btn-icon" title="Gestionar Módulos" onclick="abrirModalModulos('${escapeHTML(clave)}')">
                   <svg viewBox="0 0 24 24" width="15" height="15" stroke="#34d399" stroke-width="2" fill="none"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -3228,7 +3246,7 @@
                     <button class="btn-logout" style="padding:0.15rem 0.4rem; font-size:0.68rem; border-radius:4px; margin:0;" onclick="abrirModalModulos('${escapeHTML(clave)}')">Editar</button>
                   </div>
                   <div style="display:flex; flex-wrap:wrap; gap:0.25rem;">
-                    ${modulosChipsHTML}
+                    ${todosModulosChipsHTML}
                   </div>
                 </div>
                 <div style="min-width:0; overflow-x:auto;">
