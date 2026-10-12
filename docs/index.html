@@ -1584,13 +1584,14 @@
                 <div class="form-group" style="margin-bottom:0;">
                   <label for="lic-plan">Plan</label>
                   <select id="lic-plan" class="input-field" onchange="onPlanChange(this.value)">
-                    <option value="gratuito">🆓 Plan Gratuito (Permanente)</option>
-                    <option value="basico">🏷️ Plan Básico ($15/mes)</option>
-                    <option value="premium" selected>⭐ Plan Premium ($25/mes)</option>
-                    <option value="empresarial">🏢 Plan Empresarial ($200/año)</option>
+                    <option value="inicial">⚡ Plan Inicial ($8/mes - Microcomercio)</option>
+                    <option value="basico">🏷️ Plan Básico ($15/mes - DTE + Caja)</option>
+                    <option value="pro" selected>⭐ Plan Pro ($25/mes - Retail Avanzado)</option>
+                    <option value="empresarial">🏢 Plan Empresarial ($45/mes - Red Completa)</option>
                     <option value="trial">Período de Prueba (Trial)</option>
                     <option value="demo-7">Demo (7 días)</option>
                     <option value="demo-15">Demo (15 días)</option>
+                    <option value="gratuito">🆓 Plan Gratuito (Rescate Administrativo)</option>
                   </select>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
@@ -2883,12 +2884,14 @@
 
           let planBadge = '';
           const p = (lic.plan || 'basico').toLowerCase();
-          if (p === 'gratuito') {
+          if (p === 'inicial') {
+            planBadge = `<span class="badge" style="background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.4);color:#38bdf8;">⚡ Inicial</span>`;
+          } else if (p === 'gratuito') {
             planBadge = `<span class="badge" style="background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.35);color:#64748b;">🆓 Gratuito</span>`;
           } else if (p === 'basico') {
             planBadge = `<span class="badge" style="background:rgba(148,163,184,0.15);border:1px solid rgba(148,163,184,0.35);color:#94a3b8;">🏷️ Básico</span>`;
-          } else if (p === 'premium') {
-            planBadge = `<span class="badge" style="background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.4);color:#6366f1;">⭐ Premium</span>`;
+          } else if (p === 'pro' || p === 'premium') {
+            planBadge = `<span class="badge" style="background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.4);color:#6366f1;">⭐ Pro</span>`;
           } else if (p === 'empresarial') {
             planBadge = `<span class="badge" style="background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;">🏢 Empresarial</span>`;
           } else if (p.includes('demo') || p === 'trial') {
@@ -3324,10 +3327,23 @@
         const diasInput = document.getElementById('lic-dias');
         const webCheckbox = document.getElementById('lic-web');
         if (!diasInput) return;
-        if (val === 'gratuito') {
+        const actInput = document.getElementById('lic-activaciones');
+        if (val === 'inicial') {
+          diasInput.value = 30;
+          diasInput.disabled = false;
+          diasInput.title = '';
+          if (actInput) actInput.value = 1;
+          aplicarPresetCreacion('general');
+          const c = document.getElementById('lic-mod-creditos');
+          if (c) c.checked = false;
+          const dte = document.getElementById('lic-mod-dte');
+          if (dte) dte.checked = false;
+          if (webCheckbox) webCheckbox.checked = false;
+        } else if (val === 'gratuito') {
           diasInput.value = 9999;
           diasInput.disabled = true;
           diasInput.title = 'Plan Gratuito permanente';
+          if (actInput) actInput.value = 1;
           aplicarPresetCreacion('general');
           const c = document.getElementById('lic-mod-creditos');
           if (c) c.checked = false;
@@ -3336,31 +3352,37 @@
           diasInput.value = 7;
           diasInput.disabled = true;
           diasInput.title = 'Demo de 7 días fijo';
+          if (actInput) actInput.value = 2;
           aplicarPresetCreacion('full');
         } else if (val === 'demo-15') {
           diasInput.value = 15;
           diasInput.disabled = true;
           diasInput.title = 'Demo de 15 días fijo';
+          if (actInput) actInput.value = 2;
           aplicarPresetCreacion('full');
         } else if (val === 'trial') {
           diasInput.value = 15;
           diasInput.disabled = false;
           diasInput.title = '';
+          if (actInput) actInput.value = 2;
           aplicarPresetCreacion('full');
         } else if (val === 'basico') {
           diasInput.value = 30;
           diasInput.disabled = false;
           diasInput.title = '';
+          if (actInput) actInput.value = 1;
           aplicarPresetCreacion('general');
-        } else if (val === 'premium') {
+        } else if (val === 'pro' || val === 'premium') {
           diasInput.value = 30;
           diasInput.disabled = false;
           diasInput.title = '';
-          aplicarPresetCreacion('general');
+          if (actInput) actInput.value = 2;
+          aplicarPresetCreacion('full');
         } else if (val === 'empresarial') {
           diasInput.value = 365;
           diasInput.disabled = false;
           diasInput.title = '';
+          if (actInput) actInput.value = 5;
           aplicarPresetCreacion('full');
           if (webCheckbox) webCheckbox.checked = true;
         } else {
@@ -3407,17 +3429,17 @@
       }
 
       async function cambiarPlan(clave, planActual) {
-        const planes = ['gratuito', 'basico', 'premium', 'empresarial'];
+        const planes = ['inicial', 'basico', 'pro', 'empresarial', 'premium', 'gratuito'];
         const input = prompt(
           `Cambiar plan para la clave: ${clave}\n` +
           `Plan actual: ${(planActual || 'basico').toUpperCase()}\n\n` +
-          `Escriba el nuevo plan (gratuito, basico, premium, empresarial):`,
+          `Escriba el nuevo plan (inicial, basico, pro, empresarial):`,
           planActual || 'basico'
         );
         if (!input) return;
         const nuevoPlan = input.trim().toLowerCase();
         if (!planes.includes(nuevoPlan)) {
-          alert('Plan inválido. Opciones válidas: gratuito, basico, premium, empresarial');
+          alert('Plan inválido. Opciones válidas: inicial, basico, pro, empresarial');
           return;
         }
         if (nuevoPlan === (planActual || '').toLowerCase()) return;
