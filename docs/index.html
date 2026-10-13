@@ -2963,13 +2963,28 @@
         return;
       }
       try {
-        const currentActivaciones = (licenciasCachedData[clave] && licenciasCachedData[clave].activaciones) || 0;
+        const lic = (licenciasCachedData && licenciasCachedData[clave]) || {};
+        const currentActivaciones = (lic && lic.activaciones) || 0;
         const newActivaciones = Math.max(0, currentActivaciones - 1);
 
         const updates = {};
         updates[`licencias/${clave}/activaciones_detalle/${machineId}`] = null;
         updates[`licencias/${clave}/activaciones`] = newActivaciones;
         updates[`terminals/${machineId}`] = null;
+
+        const remainingDetKeys = Object.keys((lic && lic.activaciones_detalle) || {}).filter(k => k !== machineId);
+        if (newActivaciones === 0 || remainingDetKeys.length === 0) {
+          updates[`licencias/${clave}/hardware_id`] = "";
+          updates[`licencias/${clave}/machine_id`] = "";
+          updates[`licencias/${clave}/nombre_equipo`] = "";
+          updates[`licencias/${clave}/ultima_activacion`] = "";
+        } else if (lic.hardware_id === machineId || lic.machine_id === machineId) {
+          const nextMid = remainingDetKeys[0];
+          const nextDet = (lic.activaciones_detalle && lic.activaciones_detalle[nextMid]) || {};
+          updates[`licencias/${clave}/hardware_id`] = nextMid;
+          updates[`licencias/${clave}/machine_id`] = nextMid;
+          updates[`licencias/${clave}/nombre_equipo`] = nextDet.hostname || nextDet.nombre || "";
+        }
 
         await fetchFirebase('.json', 'PATCH', updates);
 
@@ -2989,9 +3004,39 @@
         return;
       }
       try {
-        await fetchFirebase(`terminals/${key}.json`, 'DELETE');
+        const t = cachedData && cachedData[key];
+        const licKey = t ? (t.license_key || t.clave_licencia) : null;
+        const updates = {};
+        updates[`terminals/${key}`] = null;
+
+        if (licKey && licenciasCachedData && licenciasCachedData[licKey]) {
+          const lic = licenciasCachedData[licKey];
+          if (lic.activaciones_detalle && lic.activaciones_detalle[key]) {
+            updates[`licencias/${licKey}/activaciones_detalle/${key}`] = null;
+            const newAct = Math.max(0, (lic.activaciones || 1) - 1);
+            updates[`licencias/${licKey}/activaciones`] = newAct;
+            const remainingKeys = Object.keys(lic.activaciones_detalle).filter(k => k !== key);
+            if (newAct === 0 || remainingKeys.length === 0) {
+              updates[`licencias/${licKey}/hardware_id`] = "";
+              updates[`licencias/${licKey}/machine_id`] = "";
+              updates[`licencias/${licKey}/nombre_equipo`] = "";
+              updates[`licencias/${licKey}/ultima_activacion`] = "";
+            } else if (lic.hardware_id === key || lic.machine_id === key) {
+              const nextMid = remainingKeys[0];
+              const nextDet = lic.activaciones_detalle[nextMid] || {};
+              updates[`licencias/${licKey}/hardware_id`] = nextMid;
+              updates[`licencias/${licKey}/machine_id`] = nextMid;
+              updates[`licencias/${licKey}/nombre_equipo`] = nextDet.hostname || nextDet.nombre || "";
+            }
+          }
+        }
+
+        await fetchFirebase('.json', 'PATCH', updates);
         showToast(`Registro de terminal '${key}' eliminado.`, "info");
         cargarDatos();
+        if (sessionStorage.getItem('active_remote_tab') === 'tab-licencias') {
+          cargarLicencias();
+        }
       } catch (e) {
         console.error(e);
         showToast("Error al eliminar la terminal.", "error");
@@ -3047,6 +3092,19 @@
                     updates[`licencias/${clave}/activaciones_detalle/${machId}`] = null;
                     licActivas[clave] = Math.max(0, licActivas[clave] - 1);
                     updates[`licencias/${clave}/activaciones`] = licActivas[clave];
+                    const remainingKeys = Object.keys(lic.activaciones_detalle).filter(k => k !== machId);
+                    if (licActivas[clave] === 0 || remainingKeys.length === 0) {
+                      updates[`licencias/${clave}/hardware_id`] = "";
+                      updates[`licencias/${clave}/machine_id`] = "";
+                      updates[`licencias/${clave}/nombre_equipo`] = "";
+                      updates[`licencias/${clave}/ultima_activacion`] = "";
+                    } else if (lic.hardware_id === machId || lic.machine_id === machId) {
+                      const nextMid = remainingKeys[0];
+                      const nextDet = lic.activaciones_detalle[nextMid] || {};
+                      updates[`licencias/${clave}/hardware_id`] = nextMid;
+                      updates[`licencias/${clave}/machine_id`] = nextMid;
+                      updates[`licencias/${clave}/nombre_equipo`] = nextDet.hostname || nextDet.nombre || "";
+                    }
                   }
                 });
               }
@@ -4138,14 +4196,37 @@
     async function restablecerActivaciones(clave) {
       if (!confirm(`¿Está seguro de restablecer el contador de activaciones para la licencia ${clave}?\n\nEsto pondrá el número de activaciones en 0 y eliminará los detalles de hardware registrados, permitiendo al cliente volver a activar.`)) return;
       try {
-        await fetchFirebase(`licencias/${clave}.json`, 'PATCH', {
-          activaciones: 0,
-          activaciones_detalle: null
+        const lic = (licenciasCachedData && licenciasCachedData[clave]) || {};
+        const updates = {};
+        updates[`licencias/${clave}/activaciones`] = 0;
+        updates[`licencias/${clave}/activaciones_detalle`] = null;
+        updates[`licencias/${clave}/hardware_id`] = "";
+        updates[`licencias/${clave}/machine_id`] = "";
+        updates[`licencias/${clave}/nombre_equipo`] = "";
+        updates[`licencias/${clave}/ultima_activacion`] = "";
+
+        const midsToReset = new Set();
+        if (lic.activaciones_detalle) {
+          Object.keys(lic.activaciones_detalle).forEach(m => midsToReset.add(m));
+        }
+        if (lic.hardware_id) midsToReset.add(lic.hardware_id);
+        if (lic.machine_id) midsToReset.add(lic.machine_id);
+
+        midsToReset.forEach(mid => {
+          if (mid) {
+            updates[`terminals/${mid}/license_key`] = "";
+            updates[`terminals/${mid}/clave_licencia`] = "";
+            updates[`terminals/${mid}/tipo_instalacion`] = "demo";
+            updates[`terminals/${mid}/mode`] = "trial";
+          }
         });
+
+        await fetchFirebase('.json', 'PATCH', updates);
 
         await registrarAuditoria(clave, "Restablecer Activaciones", "Contador de activaciones restablecido a 0 y detalles de hardware eliminados.");
         showToast('Contador de activaciones restablecido con éxito.', 'success');
         cargarLicencias();
+        cargarDatos();
       } catch (e) {
         showToast('Error al restablecer las activaciones.', 'error');
       }
