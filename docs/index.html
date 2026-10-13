@@ -2873,14 +2873,70 @@
       if (!licKey || !licKey.trim()) return;
       const clave = licKey.trim().toUpperCase();
       try {
-        await fetchFirebase(`terminals/${key}.json`, 'PATCH', {
-          license_key: clave,
-          clave_licencia: clave,
-          bloqueado: false
-        });
+        const [lic, termData] = await Promise.all([
+          fetchFirebase(`licencias/${clave}.json`),
+          fetchFirebase(`terminals/${key}.json`)
+        ]);
+
+        if (!lic || !lic.estado) {
+          showToast(`La licencia '${clave}' no existe en Firebase.`, 'error');
+          return;
+        }
+        if (lic.estado === 'suspendida') {
+          showToast(`La licencia '${clave}' se encuentra suspendida.`, 'error');
+          return;
+        }
+
+        const maxAct = parseInt(lic.max_activaciones, 10) || 1;
+        const detMap = (lic.activaciones_detalle && typeof lic.activaciones_detalle === 'object') ? lic.activaciones_detalle : {};
+        const registeredMids = new Set(Object.keys(detMap).filter(k => k && k.trim()));
+        if (lic.hardware_id) registeredMids.add(lic.hardware_id.trim());
+        if (lic.machine_id) registeredMids.add(lic.machine_id.trim());
+
+        const isRegistered = registeredMids.has(key);
+        const currentCount = Math.max(registeredMids.size, parseInt(lic.activaciones, 10) || 0);
+
+        if (!isRegistered && currentCount >= maxAct) {
+          showToast(`Límite de activaciones alcanzado (${currentCount}/${maxAct}) para la licencia '${clave}'.`, 'error');
+          return;
+        }
+
+        registeredMids.add(key);
+        const newCount = Math.max(registeredMids.size, currentCount, 1);
+        const hostname = (termData && (termData.nombre_equipo || termData.nombre)) || 'Terminal POS';
+        const nowIso = new Date().toISOString();
+
+        const updates = {};
+        // Actualizar terminal
+        updates[`terminals/${key}/license_key`] = clave;
+        updates[`terminals/${key}/clave_licencia`] = clave;
+        updates[`terminals/${key}/tipo_instalacion`] = 'comercial';
+        updates[`terminals/${key}/mode`] = 'active';
+        updates[`terminals/${key}/bloqueado`] = false;
+
+        // Actualizar detalle de activación
+        updates[`licencias/${clave}/activaciones_detalle/${key}`] = {
+          hostname: hostname,
+          machine_id: key,
+          activado_el: (detMap[key] && detMap[key].activado_el) ? detMap[key].activado_el : nowIso,
+          last_seen: nowIso
+        };
+
+        // Actualizar nodo raíz de la licencia (Contrato Tripartito)
+        updates[`licencias/${clave}/hardware_id`] = key;
+        updates[`licencias/${clave}/machine_id`] = key;
+        updates[`licencias/${clave}/nombre_equipo`] = hostname;
+        updates[`licencias/${clave}/ultima_activacion`] = nowIso;
+        updates[`licencias/${clave}/activaciones`] = newCount;
+        updates[`licencias/${clave}/estado`] = 'activa';
+
+        await fetchFirebase('.json', 'PATCH', updates);
         showToast(`¡Licencia comercial '${clave}' vinculada a '${key}'!`, 'success');
-        await registrarAuditoria('SISTEMA', 'Licencia Vinculada', `Se asignó la clave comercial '${clave}' a terminal '${key}'.`);
+        await registrarAuditoria('SISTEMA', 'Licencia Vinculada', `Se vinculó la clave comercial '${clave}' a terminal '${key}' (${hostname}). Activaciones: ${newCount}/${maxAct}.`);
         cargarDatos();
+        if (sessionStorage.getItem('active_remote_tab') === 'tab-licencias') {
+          cargarLicencias();
+        }
       } catch (e) {
         console.error(e);
         showToast('Error al vincular licencia: ' + e.message, 'error');
