@@ -260,6 +260,26 @@
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.15);
       color: #fff;
+      transition: all 0.3s ease;
+    }
+
+    .tab-badge.badge-pending {
+      background: #f59e0b;
+      color: #0f172a;
+      font-weight: 800;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+      animation: pulseBadgePending 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseBadgePending {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+      }
+      50% {
+        transform: scale(1.08);
+        box-shadow: 0 0 0 7px rgba(245, 158, 11, 0);
+      }
     }
 
     .tab-panel {
@@ -1333,6 +1353,41 @@
     .toast-info { border-left: 4px solid var(--primary); }
     .toast-warning { border-left: 4px solid var(--warning); }
 
+    .toast-pending-approval {
+      border-left: 4px solid #f59e0b !important;
+      background: rgba(26, 20, 10, 0.96) !important;
+      border-color: rgba(245, 158, 11, 0.45) !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(245, 158, 11, 0.25) !important;
+      padding: 1.1rem 1.25rem !important;
+      max-width: 420px !important;
+      pointer-events: all !important;
+    }
+
+    .btn-notif-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-soft);
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-notif-action:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: var(--card-border-hover);
+    }
+    .btn-notif-action.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+    }
+
     /* ── Spinner / Loader ──────────────────────────────── */
     .loader {
       border: 3px solid rgba(255, 255, 255, 0.1);
@@ -1573,6 +1628,13 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn-notif-action active" id="btn-notif-toggle" onclick="toggleNotificacionesSistema()" title="Gestionar alertas sonoras y notificaciones de escritorio">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span id="lbl-notif-status">Alertas: Activadas</span>
+        </button>
         <span class="connection-pill">
           <span class="status-dot status-online"></span>
           <span>Nube Conectada</span>
@@ -2230,7 +2292,271 @@
     let dbUrl = "";
     let dbSecret = "";
     let timerRef = null;
+    let terminalsCheckTimer = null;
+    let eventSourceTerminals = null;
     let licenciasCachedData = {};
+    let knownPendingKeys = new Set();
+    let soundEnabled = localStorage.getItem('dashpos_sound_enabled') !== 'false';
+
+    // ── Motor de Sonido Sintetizado Nativo (Web Audio API) ───────────────────
+    function reproducirSonidoAlerta() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+
+        // Tono Armónico 1 (D5 - 587.33 Hz)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(587.33, now);
+        gain1.gain.setValueAtTime(0.18, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+
+        // Tono Armónico 2 (A5 - 880.00 Hz)
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880.0, now + 0.12);
+        gain2.gain.setValueAtTime(0.22, now + 0.12);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.12);
+        osc2.stop(now + 0.6);
+      } catch (e) {
+        console.debug("Audio en espera de interacción:", e);
+      }
+    }
+
+    // ── Notificaciones de Escritorio del Sistema (Web Notification API) ────
+    function solicitarPermisoNotificaciones() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          actualizarBotonNotificaciones();
+          if (permission === 'granted') {
+            showToast("Notificaciones de escritorio habilitadas con éxito.", "success");
+            dispararNotificacionSistema("VendlyPOS DashPOS", "Notificaciones de escritorio configuradas correctamente.", "setup");
+          } else {
+            showToast("Permiso de notificaciones denegado en el navegador.", "warning");
+          }
+        });
+      } else {
+        showToast("Tu navegador no soporta notificaciones de escritorio.", "info");
+      }
+    }
+
+    function toggleNotificacionesSistema() {
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        solicitarPermisoNotificaciones();
+        return;
+      }
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('dashpos_sound_enabled', soundEnabled ? 'true' : 'false');
+      actualizarBotonNotificaciones();
+      showToast(soundEnabled ? "Alertas sonoras activadas." : "Alertas sonoras silenciadas.", "info");
+      if (soundEnabled) reproducirSonidoAlerta();
+    }
+
+    function actualizarBotonNotificaciones() {
+      const btn = document.getElementById('btn-notif-toggle');
+      const lbl = document.getElementById('lbl-notif-status');
+      if (!btn || !lbl) return;
+
+      const hasPerm = 'Notification' in window && Notification.permission === 'granted';
+      if (soundEnabled && hasPerm) {
+        btn.className = 'btn-notif-action active';
+        lbl.innerText = 'Alertas: Activas';
+        btn.title = 'Alertas sonoras y de escritorio activadas';
+      } else if (soundEnabled && !hasPerm) {
+        btn.className = 'btn-notif-action';
+        lbl.innerText = 'Sonido: ON (Clic para Push)';
+        btn.title = 'Sonido activo. Clic para habilitar notificaciones de escritorio';
+      } else {
+        btn.className = 'btn-notif-action';
+        lbl.innerText = 'Alertas: Silenciadas';
+        btn.title = 'Clic para activar alertas';
+      }
+    }
+
+    function dispararNotificacionSistema(titulo, cuerpo, mid) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const notif = new Notification(titulo, {
+            body: cuerpo,
+            tag: `terminal-pending-${mid}`,
+            requireInteraction: true
+          });
+          notif.onclick = function() {
+            window.focus();
+            switchTab('tab-terminales');
+            notif.close();
+          };
+        } catch (e) {
+          console.debug("Error en notificación nativa:", e);
+        }
+      }
+    }
+
+    // ── Toast Flotante Interactivo de Aprobación Inmediata ──────────────────
+    function mostrarToastSolicitudPendiente(t) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      if (document.getElementById(`toast-pending-${t.key}`)) return;
+
+      const toast = document.createElement('div');
+      toast.id = `toast-pending-${t.key}`;
+      toast.className = 'toast toast-warning toast-pending-approval show';
+      toast.style.pointerEvents = 'all';
+      toast.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:0.45rem; width:100%;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+            <span style="font-weight:700; color:#fbbf24; display:flex; align-items:center; gap:0.4rem; font-size:0.88rem;">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              Nueva Solicitud de Equipo
+            </span>
+            <button onclick="document.getElementById('toast-pending-${t.key}')?.remove()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; line-height:1;" title="Cerrar">✕</button>
+          </div>
+          <div style="font-size:0.82rem; color:var(--text-soft); line-height:1.4;">
+            El equipo <strong>${escapeHTML(t.nombre_equipo || 'Nuevo Equipo')}</strong> (<code>${escapeHTML(t.key)}</code>) está esperando aprobación para iniciar su período de prueba.
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-top:0.4rem; align-items:center;">
+            <button class="btn btn-sm btn-primary" onclick="aprobarDemo('${t.key}'); document.getElementById('toast-pending-${t.key}')?.remove();" style="padding:5px 12px; font-size:0.78rem; font-weight:700;">
+              ✅ Aprobar 15 Días
+            </button>
+            <button class="btn btn-sm btn-outline" onclick="switchTab('tab-terminales'); document.getElementById('toast-pending-${t.key}')?.remove();" style="padding:5px 10px; font-size:0.78rem;">
+              Ver en Lista
+            </button>
+          </div>
+        </div>
+      `;
+      container.appendChild(toast);
+    }
+
+    // ── Monitoreo Global de Terminales y Conexión en Tiempo Real ───────────
+    async function verificarTerminalesGlobal() {
+      if (!dbUrl) return;
+      try {
+        const terminals = await fetchFirebase('terminals.json');
+        if (!terminals || typeof terminals !== 'object') {
+          actualizarKpisTerminales([], 0, 0, 0);
+          return;
+        }
+
+        const termList = Object.entries(terminals).map(([key, val]) => ({ key, ...val }));
+        const pendingList = termList.filter(t => (t.tipo_instalacion === 'demo' || t.aprobado === false) && t.aprobado === false);
+
+        // Actualizar Badge de Pestaña con indicador de pendientes
+        const b = document.getElementById('tab-badge-terminals');
+        if (b) {
+          if (pendingList.length > 0) {
+            b.className = 'tab-badge badge-pending';
+            b.innerText = `${pendingList.length} PENDIENTE${pendingList.length > 1 ? 'S' : ''}`;
+            b.style.display = 'inline-flex';
+          } else {
+            b.className = 'tab-badge';
+            b.innerText = termList.length;
+            b.style.display = termList.length > 0 ? 'inline-flex' : 'none';
+          }
+        }
+
+        // Actualizar KPI de demos pendientes
+        const kpiDemos = document.getElementById('kpi-term-demos');
+        if (kpiDemos) kpiDemos.innerText = pendingList.length;
+
+        // Actualizar Banner en la vista si existe
+        const bannerEl = document.getElementById('pending-demos-banner');
+        if (bannerEl) {
+          if (pendingList.length > 0) {
+            bannerEl.style.display = 'block';
+            bannerEl.innerHTML = `
+              <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; padding: 0.85rem 1.25rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem;">
+                <span>⚠️ Tienes <strong>${pendingList.length}</strong> solicitud(es) de Demo esperando tu aprobación.</span>
+                <span style="font-size: 0.75rem; color: var(--text-soft);">Usa el botón 'Aprobar Demo' en la lista</span>
+              </div>
+            `;
+          } else {
+            bannerEl.style.display = 'none';
+          }
+        }
+
+        // Disparar alertas para solicitudes nuevas no vistas
+        pendingList.forEach(t => {
+          if (!knownPendingKeys.has(t.key)) {
+            knownPendingKeys.add(t.key);
+
+            if (soundEnabled) {
+              reproducirSonidoAlerta();
+            }
+
+            dispararNotificacionSistema(
+              "⚠️ Nueva Terminal para Aprobación",
+              `El equipo '${t.nombre_equipo || 'Nuevo'}' (${t.key}) solicita aprobación para iniciar Demo de 15 días.`,
+              t.key
+            );
+
+            mostrarToastSolicitudPendiente(t);
+
+            if (sessionStorage.getItem('active_remote_tab') === 'tab-terminales') {
+              cargarDatos();
+            }
+          }
+        });
+
+        // Limpiar del registro aquellas que ya fueron aprobadas o eliminadas
+        const currentPendingKeys = new Set(pendingList.map(t => t.key));
+        for (const k of knownPendingKeys) {
+          if (!currentPendingKeys.has(k)) {
+            knownPendingKeys.delete(k);
+            const toastEl = document.getElementById(`toast-pending-${k}`);
+            if (toastEl) toastEl.remove();
+          }
+        }
+      } catch (err) {
+        console.debug("Verificación global de terminales en espera:", err);
+      }
+    }
+
+    // ── Conexión en Tiempo Real vía Server-Sent Events (SSE) ───────────────
+    function iniciarSSE() {
+      if (!dbUrl || dbUrl === "/api/proxy/firebase") return;
+      try {
+        if (eventSourceTerminals) {
+          eventSourceTerminals.close();
+          eventSourceTerminals = null;
+        }
+        let sseUrl = dbUrl.trim();
+        if (!sseUrl.endsWith('/')) sseUrl += '/';
+        sseUrl += 'terminals.json';
+        if (dbSecret) {
+          sseUrl += `?auth=${encodeURIComponent(dbSecret)}`;
+        }
+
+        eventSourceTerminals = new EventSource(sseUrl);
+        eventSourceTerminals.addEventListener('put', (e) => {
+          verificarTerminalesGlobal();
+          if (sessionStorage.getItem('active_remote_tab') === 'tab-terminales') {
+            cargarDatos();
+          }
+        });
+        eventSourceTerminals.addEventListener('patch', (e) => {
+          verificarTerminalesGlobal();
+          if (sessionStorage.getItem('active_remote_tab') === 'tab-terminales') {
+            cargarDatos();
+          }
+        });
+        eventSourceTerminals.onerror = () => {
+          // Si SSE cae, el ciclo de sondeo secundario garantiza la supervisión
+        };
+      } catch (err) {
+        console.warn("EventSource no iniciado:", err);
+      }
+    }
 
     function formatLocalYMD(date) {
       const y = date.getFullYear();
@@ -2299,6 +2625,8 @@
 
       const savedUrl = localStorage.getItem('remote_fb_url');
       const savedSecret = localStorage.getItem('remote_fb_secret');
+
+      actualizarBotonNotificaciones();
 
       if (savedUrl) {
         document.getElementById('fb-url').value = savedUrl;
@@ -2437,9 +2765,14 @@
 
         cargarDatos();
         limpiarTerminalesInactivas();
+        verificarTerminalesGlobal();
+        iniciarSSE();
 
         if (timerRef) clearInterval(timerRef);
         timerRef = setInterval(cargarDatos, 30000);
+
+        if (terminalsCheckTimer) clearInterval(terminalsCheckTimer);
+        terminalsCheckTimer = setInterval(verificarTerminalesGlobal, 8000);
 
       } catch (e) {
         console.error(e);
@@ -2458,6 +2791,11 @@
       dbUrl = "";
       dbSecret = "";
       if (timerRef) clearInterval(timerRef);
+      if (terminalsCheckTimer) clearInterval(terminalsCheckTimer);
+      if (eventSourceTerminals) {
+        eventSourceTerminals.close();
+        eventSourceTerminals = null;
+      }
       document.getElementById('login-overlay').classList.add('active');
       showToast("Desconectado de la base de datos.", "info");
     }
@@ -2762,8 +3100,15 @@
       document.getElementById('kpi-term-demos').innerText = pendientes;
       const b = document.getElementById('tab-badge-terminals');
       if (b) {
-        b.innerText = termList.length;
-        b.style.display = termList.length > 0 ? 'inline-flex' : 'none';
+        if (pendientes > 0) {
+          b.className = 'tab-badge badge-pending';
+          b.innerText = `${pendientes} PENDIENTE${pendientes > 1 ? 'S' : ''}`;
+          b.style.display = 'inline-flex';
+        } else {
+          b.className = 'tab-badge';
+          b.innerText = termList.length;
+          b.style.display = termList.length > 0 ? 'inline-flex' : 'none';
+        }
       }
     }
 
@@ -2807,8 +3152,12 @@
           updated_at: ahora
         });
         showToast(`¡Demo aprobada por ${dias} días para '${key}'!`, 'success');
+        knownPendingKeys.delete(key);
+        const pendingToast = document.getElementById(`toast-pending-${key}`);
+        if (pendingToast) pendingToast.remove();
         await registrarAuditoria('SISTEMA', 'Demo Aprobada', `Se aprobaron ${dias} días de demo para la terminal '${key}'.`);
         cargarDatos();
+        verificarTerminalesGlobal();
       } catch (e) {
         console.error(e);
         showToast('Error al aprobar la demo: ' + e.message, 'error');
