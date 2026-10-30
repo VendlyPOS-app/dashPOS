@@ -3261,6 +3261,8 @@
         updates[`terminals/${key}/tipo_instalacion`] = 'comercial';
         updates[`terminals/${key}/mode`] = 'active';
         updates[`terminals/${key}/bloqueado`] = false;
+        updates[`terminals/${key}/aprobado`] = true;
+        updates[`terminals/${key}/estado_aprobacion`] = 'aprobado';
 
         // Actualizar detalle de activación
         updates[`licencias/${clave}/activaciones_detalle/${key}`] = {
